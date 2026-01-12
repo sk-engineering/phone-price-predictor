@@ -62,7 +62,7 @@ model, defaults, feature_names, ranges = train_model()
 # FRONTEND (Webseite)
 # ---------------------------------------------------------
 st.title("📱 Smartphone Price Predictor")
-st.markdown("**ksterarbeit**")
+st.markdown("**Semesterarbeit**")
 
 if model is None:
     st.error("Fehler: 'train.csv' wurde nicht gefunden. Bitte Datei hochladen.")

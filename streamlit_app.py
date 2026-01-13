@@ -82,8 +82,8 @@ def get_individual_votes(model, input_df):
 # ---------------------------------------------------------
 # UI LAYOUT
 # ---------------------------------------------------------
-st.title("📱 Smartphone Price AI")
-st.markdown("Semesterarbeit DSBE | **Kiliç & Keller**")
+st.title("📱 Smartphone Price Predictor")
+st.markdown("**Semesterarbeit DSBE**")
 
 if model is None:
     st.error("⚠️ 'train.csv' fehlt! Bitte laden Sie die Datei in das GitHub Repository hoch.")

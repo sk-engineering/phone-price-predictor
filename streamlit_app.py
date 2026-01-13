@@ -3,11 +3,12 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 import plotly.graph_objects as go
+import plotly.express as px
 
 # ---------------------------------------------------------
 # KONFIGURATION
 # ---------------------------------------------------------
-st.set_page_config(page_title="Smartphone Price AI", layout="wide")
+st.set_page_config(page_title="Smartphone AI Analyst", layout="wide", page_icon="📱")
 
 CLASSES = {
     0: "Niedrig (Low Cost)",
@@ -16,63 +17,85 @@ CLASSES = {
     3: "Sehr Hoch (Very High Cost)"
 }
 
-# Farben für Plotly
-COLORS = ["#2ecc71", "#3498db", "#f39c12", "#e74c3c"]
+# Farben passend zu Plotly (Grün, Blau, Orange, Rot)
+COLOR_MAP = {
+    0: "#2ecc71", 1: "#3498db", 2: "#f39c12", 3: "#e74c3c"
+}
+# Für die Heatmap (0=Grün, 1=Blau, 2=Orange, 3=Rot)
+HEATMAP_COLORS = [
+    [0.0, "#2ecc71"], [0.25, "#2ecc71"],
+    [0.25, "#3498db"], [0.5, "#3498db"],
+    [0.5, "#f39c12"], [0.75, "#f39c12"],
+    [0.75, "#e74c3c"], [1.0, "#e74c3c"]
+]
 
 # ---------------------------------------------------------
-# BACKEND (Mit Caching für Performance)
+# BACKEND (Mit Caching für Speed)
 # ---------------------------------------------------------
 @st.cache_resource
-def train_model():
+def load_model():
+    # Daten laden
     try:
-        # Daten laden
-        # HINWEIS: In der Cloud muss die Datei im gleichen Ordner liegen!
         df = pd.read_csv('train.csv')
-        df = df[df['px_height'] != 0]
-        
-        # Feature Engineering
-        df['screen_area'] = df['sc_h'] * df['sc_w']
-        df['screen_area'] = df['screen_area'].replace(0, df['screen_area'].median())
-        df['pixel_density'] = (df['px_height'] * df['px_width']) / df['screen_area']
-        df['camera_quality'] = df['fc'] + df['pc']
-
-        X = df.drop('price_range', axis=1)
-        y = df['price_range']
-        
-        feature_names = X.columns
-        defaults = df.median()
-        
-        # Min/Max für Radar Chart
-        ranges = {}
-        for col in defaults.index:
-            if col in df.columns:
-                ranges[col] = (df[col].min(), df[col].max())
-
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
-        model.fit(X, y)
-        
-        return model, defaults, feature_names, ranges
-    except Exception as e:
+    except:
         return None, None, None, None
 
-# Modell laden
-model, defaults, feature_names, ranges = train_model()
+    df = df[df['px_height'] != 0]
+    
+    # Feature Engineering
+    df['screen_area'] = df['sc_h'] * df['sc_w']
+    df['screen_area'] = df['screen_area'].replace(0, df['screen_area'].median())
+    df['pixel_density'] = (df['px_height'] * df['px_width']) / df['screen_area']
+    df['camera_quality'] = df['fc'] + df['pc']
+
+    X = df.drop('price_range', axis=1)
+    y = df['price_range']
+    
+    feature_names = X.columns
+    defaults = df.median()
+    
+    ranges = {}
+    for col in defaults.index:
+        if col in df.columns:
+            ranges[col] = (df[col].min(), df[col].max())
+
+    # 100 Bäume für das Mosaik
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    
+    return model, defaults, feature_names, ranges
+
+model, defaults, feature_names, ranges = load_model()
 
 # ---------------------------------------------------------
-# FRONTEND (Webseite)
+# HELPERS
 # ---------------------------------------------------------
-st.title("📱 Smartphone Price Predictor")
-st.markdown("**Semesterarbeit**")
+def get_individual_votes(model, input_df):
+    """Holt die 100 Einzelmeinungen für das Mosaik"""
+    votes = []
+    # Wir iterieren durch alle 100 Bäume im Wald
+    for tree in model.estimators_:
+        vote = tree.predict(input_df.to_numpy())[0]
+        votes.append(int(vote))
+    return votes
+
+# ---------------------------------------------------------
+# UI LAYOUT
+# ---------------------------------------------------------
+st.title("📱 Smartphone Price AI")
+st.markdown("Semesterarbeit DSBE | **Kiliç & Keller**")
 
 if model is None:
-    st.error("Fehler: 'train.csv' wurde nicht gefunden. Bitte Datei hochladen.")
+    st.error("⚠️ 'train.csv' fehlt! Bitte laden Sie die Datei in das GitHub Repository hoch.")
     st.stop()
 
-# Layout: 2 Spalten (Links Inputs, Rechts Ergebnisse)
-col1, col2 = st.columns([1, 1.5])
+# Spalten-Layout
+left_col, right_col = st.columns([1, 1.5])
 
-with col1:
+# --- LINKE SPALTE: INPUTS ---
+with left_col:
     st.subheader("⚙️ Konfiguration")
+    st.info("Verstellen Sie die Werte, um das KI-Modell live herauszufordern.")
     
     ram = st.slider("Arbeitsspeicher (RAM)", 256, 4000, 2000, format="%d MB")
     battery = st.slider("Batteriekapazität", 500, 4000, 3000, format="%d mAh")
@@ -81,7 +104,7 @@ with col1:
     int_mem = st.slider("Interner Speicher", 2, 128, 64, format="%d GB")
     pc = st.slider("Kamerauflösung", 0, 20, 10, format="%d MP")
 
-    # Inputs sammeln
+    # Daten aufbereiten
     inputs = defaults.copy()
     inputs['ram'] = ram
     inputs['battery_power'] = battery
@@ -90,56 +113,92 @@ with col1:
     inputs['int_memory'] = int_mem
     inputs['pc'] = pc
 
-    # Vorhersage
     df_pred = pd.DataFrame([inputs])
     df_pred['screen_area'] = df_pred['sc_h'] * df_pred['sc_w']
     if df_pred['screen_area'].iloc[0] == 0: df_pred['screen_area'] = 1
     df_pred['pixel_density'] = (df_pred['px_height'] * df_pred['px_width']) / df_pred['screen_area']
     df_pred['camera_quality'] = df_pred['fc'] + df_pred['pc']
     df_pred = df_pred[feature_names]
-    
+
+    # VORHERSAGE
     probs = model.predict_proba(df_pred)[0]
     pred_class = np.argmax(probs)
+    votes = get_individual_votes(model, df_pred)
 
-with col2:
-    st.subheader("📊 Analyse & Ergebnis")
+# --- RECHTE SPALTE: VISUALISIERUNG ---
+with right_col:
+    # 1. Ergebnis Banner
+    st.subheader("📊 Analyse-Ergebnis")
     
-    # 1. Grosses Ergebnis
-    st.metric(label="Vorhergesagte Klasse", value=CLASSES[pred_class])
+    res_color = COLOR_MAP[pred_class]
+    st.markdown(f"""
+    <div style="background-color: {res_color}; padding: 20px; border-radius: 10px; color: white; text-align: center;">
+        <h2 style="margin:0;">{CLASSES[pred_class]}</h2>
+        <p style="margin:0;">Modell-Sicherheit: {probs[pred_class]:.1%}</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Farbiger Balken je nach Klasse
-    st.progress(int(probs[pred_class] * 100))
-    st.caption(f"Sicherheit des Modells: {probs[pred_class]:.1%}")
+    st.write("") # Abstand
 
-    # Tabs für Grafiken
-    tab1, tab2 = st.tabs(["Performance Fingerprint", "Wahrscheinlichkeiten"])
+    # 2. Tabs für Details
+    tab1, tab2, tab3 = st.tabs(["🧩 Das KI-Mosaik", "🕸️ Fingerprint", "📈 Wahrscheinlichkeiten"])
 
     with tab1:
-        # RADAR CHART mit Plotly
-        # Normalisieren der Werte für 0-1 Skala
+        st.markdown("**Blick in das 'Gehirn' des Random Forest:**")
+        st.caption("Jedes Quadrat ist einer von 100 Entscheidungsbäumen. Wenn sich die Farben mischen, ist das Modell unsicher (Konflikt).")
+        
+        # Mosaik bauen (10x10 Grid)
+        grid = np.array(votes).reshape(10, 10)
+        
+        fig_mosaic = go.Figure(data=go.Heatmap(
+            z=grid,
+            colorscale=HEATMAP_COLORS,
+            zmin=0, zmax=3,
+            showscale=False,
+            xgap=1, ygap=1 # Gitterlinien
+        ))
+        fig_mosaic.update_layout(
+            width=350, height=350,
+            xaxis=dict(showticklabels=False, fixedrange=True),
+            yaxis=dict(showticklabels=False, fixedrange=True, autorange="reversed"),
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+        st.plotly_chart(fig_mosaic, use_container_width=True)
+
+    with tab2:
+        # Radar Chart
         r_norm = (ram - ranges['ram'][0]) / (ranges['ram'][1] - ranges['ram'][0])
         b_norm = (battery - ranges['battery_power'][0]) / (ranges['battery_power'][1] - ranges['battery_power'][0])
         p_norm = (px_h - ranges['px_height'][0]) / (ranges['px_height'][1] - ranges['px_height'][0])
         
-        fig = go.Figure(data=go.Scatterpolar(
+        fig_radar = go.Figure(data=go.Scatterpolar(
             r=[r_norm, b_norm, p_norm, r_norm],
-            theta=['RAM', 'Battery', 'Display', 'RAM'],
+            theta=['RAM (Leistung)', 'Battery (Ausdauer)', 'Display (Schärfe)', 'RAM'],
             fill='toself',
-            name='Smartphone',
-            line_color=COLORS[pred_class]
+            line_color=res_color
         ))
-        fig.update_layout(
+        fig_radar.update_layout(
             polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
             showlegend=False,
             height=300,
             margin=dict(l=40, r=40, t=20, b=20)
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_radar, use_container_width=True)
 
-    with tab2:
-        # BALKENDIAGRAMM
-        bar_data = pd.DataFrame({
-            'Klasse': ["Low", "Medium", "High", "Very High"],
-            'Wahrscheinlichkeit': probs
+    with tab3:
+        # Balkendiagramm
+        probs_df = pd.DataFrame({
+            "Klasse": ["Low", "Medium", "High", "Very High"],
+            "Wahrscheinlichkeit": probs,
+            "Farbe": [COLOR_MAP[0], COLOR_MAP[1], COLOR_MAP[2], COLOR_MAP[3]]
         })
-        st.bar_chart(bar_data.set_index('Klasse'), color=COLORS[pred_class])
+        
+        fig_bar = px.bar(probs_df, x="Klasse", y="Wahrscheinlichkeit", 
+                         color="Klasse", color_discrete_map={
+                             "Low": COLOR_MAP[0], "Medium": COLOR_MAP[1], 
+                             "High": COLOR_MAP[2], "Very High": COLOR_MAP[3]
+                         })
+        fig_bar.update_layout(showlegend=False, height=300)
+        st.plotly_chart(fig_bar, use_container_width=True)

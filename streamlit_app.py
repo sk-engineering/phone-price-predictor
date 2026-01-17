@@ -8,7 +8,7 @@ import plotly.express as px
 # ---------------------------------------------------------
 # KONFIGURATION
 # ---------------------------------------------------------
-st.set_page_config(page_title="Smartphone AI Analyst", layout="wide", page_icon="📱")
+st.set_page_config(page_title="Smartphone Price Predictor", layout="wide", page_icon="📱")
 
 CLASSES = {
     0: "Niedrig (Low Cost)",
@@ -80,8 +80,8 @@ def get_individual_votes(model, input_df):
 # ---------------------------------------------------------
 # UI LAYOUT
 # ---------------------------------------------------------
-st.title("📱 Smartphone Price AI")
-st.markdown("Semesterarbeit DSBE | **Kiliç & Keller**")
+st.title("📱 Smartphone Price Predictor")
+st.markdown("Semesterarbeit DSBE")
 
 if model is None:
     st.error("⚠️ 'train.csv' fehlt!")
@@ -134,7 +134,7 @@ with right_col:
     """, unsafe_allow_html=True)
     st.write("")
 
-    tab1, tab2, tab3 = st.tabs(["🕸️ 5-Point Fingerprint", "🧩 KI-Mosaik", "📈 Details"])
+    tab1, tab2, tab3 = st.tabs(["🕸️ Fingerprint", "🧩 KI-Mosaik", "📈 Wahrscheinlichkeiten"])
 
     with tab1:
         # RADAR CHART (5-ACHSEN)

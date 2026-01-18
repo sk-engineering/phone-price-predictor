@@ -170,8 +170,8 @@ with right_col:
                 angularaxis=dict(direction="clockwise") # Uhrzeigersinn liest sich besser
             ),
             showlegend=False,
-            height=400,
-            margin=dict(l=50, r=50, t=30, b=30)
+            height=350,
+            margin=dict(l=50, r=50, t=50, b=50)
         )
         st.plotly_chart(fig_radar, use_container_width=True)
         st.caption("Das Diagramm zeigt die Balance der Hardware-Komponenten. Je grösser die Fläche, desto besser die Ausstattung.")

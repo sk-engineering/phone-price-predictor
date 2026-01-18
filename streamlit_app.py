@@ -170,7 +170,7 @@ with right_col:
                 angularaxis=dict(direction="clockwise") # Uhrzeigersinn liest sich besser
             ),
             showlegend=False,
-            height=350,
+            height=400,
             margin=dict(l=50, r=50, t=30, b=30)
         )
         st.plotly_chart(fig_radar, use_container_width=True)

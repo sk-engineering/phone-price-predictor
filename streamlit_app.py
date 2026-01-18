@@ -177,63 +177,80 @@ with right_col:
         st.caption("Das Diagramm zeigt die Balance der Hardware-Komponenten. Je grösser die Fläche, desto besser die Ausstattung.")
 
     with tab2:
-            st.markdown("**Die Topografie der Entscheidung:**")
-            st.caption("Eine 3D-Karte aller 100 Entscheidungsbäume. Ebene = Einigkeit, Zacken = Unsicherheit.")
+            st.markdown("### Das Gehirn des Modells: 2D vs. 3D")
+            st.caption("Vergleich der 100 Entscheidungsbäume. Links die flache Draufsicht, rechts die Topografie der Entscheidung.")
     
-            # Grid vorbereiten (10x10 Matrix der Votes)
+            # Grid Daten vorbereiten
             grid = np.array(votes).reshape(10, 10)
     
-            # Frames für die Rotation erstellen
-            frames = []
-            for t in range(0, 360, 2): # Kleinerer Schritt für flüssigere Animation
-                rad = np.radians(t)
-                x_eye = 1.8 * np.cos(rad)
-                y_eye = 1.8 * np.sin(rad)
-                
-                frames.append(go.Frame(
-                    layout=dict(scene=dict(camera=dict(eye=dict(x=x_eye, y=y_eye, z=0.6))))
+            # Layout in zwei Spalten teilen
+            col_2d, col_3d = st.columns([1, 1]) # 50/50 Aufteilung
+    
+            # --- LINKE SPALTE: 2D HEATMAP ---
+            with col_2d:
+                st.markdown("#### 🟦 2D Mosaik")
+                fig_2d = go.Figure(data=go.Heatmap(
+                    z=grid, 
+                    colorscale=HEATMAP_COLORS, 
+                    zmin=0, zmax=3, 
+                    showscale=False, 
+                    xgap=2, ygap=2 # Lücken für Kacheleffekt
                 ))
+                fig_2d.update_layout(
+                    height=350,
+                    xaxis=dict(visible=False), 
+                    yaxis=dict(visible=False, autorange="reversed"),
+                    margin=dict(l=10, r=10, t=10, b=10),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)'
+                )
+                st.plotly_chart(fig_2d, use_container_width=True)
     
-            # 3D Surface Plot erstellen
-            fig_surface = go.Figure(
-                data=[go.Surface(
-                    z=grid,
-                    colorscale=HEATMAP_COLORS, # Wir nutzen deine definierten Farben
-                    cmin=0, cmax=3,            # Skala festsetzen
-                    opacity=0.9,
-                    contours_z=dict(
-                        show=True, usecolormap=False, 
-                        highlightcolor="white", project_z=True
-                    )
-                )],
+            # --- RECHTE SPALTE: 3D SURFACE ---
+            with col_3d:
+                st.markdown("#### 🏔️ 3D Landschaft")
                 
-                layout=go.Layout(
-                    height=450,
-                    margin=dict(l=0, r=0, b=0, t=0),
-                    scene=dict(
-                        xaxis=dict(visible=False),
-                        yaxis=dict(visible=False),
-                        zaxis=dict(title="Klasse", range=[0, 3], tickvals=[0,1,2,3], ticktext=["Low", "Med", "High", "V.High"]),
-                        aspectmode='manual',
-                        aspectratio=dict(x=1, y=1, z=0.6) # Z etwas flacher machen für Landschafts-Look
-                    ),
-                    # Play-Button
-                    updatemenus=[dict(
-                        type='buttons',
-                        showactive=False,
-                        y=0.1, x=0.1, xanchor='right', yanchor='top',
-                        pad=dict(t=0, r=10),
-                        buttons=[dict(
-                            label="🎬 Flug starten",
-                            method="animate",
-                            args=[None, dict(frame=dict(duration=30, redraw=True), fromcurrent=True, transition=dict(duration=0))]
-                        )]
-                    )]
-                ),
-                frames=frames
-            )
+                # Frames für Animation berechnen
+                frames = []
+                for t in range(0, 360, 5):
+                    rad = np.radians(t)
+                    x_eye = 1.6 * np.cos(rad)
+                    y_eye = 1.6 * np.sin(rad)
+                    frames.append(go.Frame(layout=dict(scene=dict(camera=dict(eye=dict(x=x_eye, y=y_eye, z=0.6))))))
     
-            st.plotly_chart(fig_surface, use_container_width=True)
+                fig_3d = go.Figure(
+                    data=[go.Surface(
+                        z=grid,
+                        colorscale=HEATMAP_COLORS,
+                        cmin=0, cmax=3,
+                        opacity=0.9,
+                        contours_z=dict(show=True, usecolormap=False, highlightcolor="white", project_z=True)
+                    )],
+                    layout=go.Layout(
+                        height=350,
+                        margin=dict(l=0, r=0, b=0, t=0),
+                        scene=dict(
+                            xaxis=dict(visible=False),
+                            yaxis=dict(visible=False),
+                            zaxis=dict(title="", range=[0, 3.5], tickvals=[0,1,2,3], ticktext=["L", "M", "H", "VH"]),
+                            aspectmode='manual',
+                            aspectratio=dict(x=1, y=1, z=0.7)
+                        ),
+                        updatemenus=[dict(
+                            type='buttons',
+                            showactive=False,
+                            y=0.05, x=0.05, xanchor='left', yanchor='bottom',
+                            pad=dict(t=0, r=10),
+                            buttons=[dict(
+                                label="🔄", # Kleinerer Button mit Icon spart Platz
+                                method="animate",
+                                args=[None, dict(frame=dict(duration=30, redraw=True), fromcurrent=True)]
+                            )]
+                        )]
+                    ),
+                    frames=frames
+                )
+                st.plotly_chart(fig_3d, use_container_width=True)
 
     with tab3:
         probs_df = pd.DataFrame({

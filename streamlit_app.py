@@ -176,84 +176,84 @@ with right_col:
         st.plotly_chart(fig_radar, use_container_width=True)
         st.caption("Das Diagramm zeigt die Balance der Hardware-Komponenten. Je grösser die Fläche, desto besser die Ausstattung.")
 
-with tab2:
-        st.markdown("**Blick in das 'Gehirn' des Random Forest (3D):**")
-        st.caption("X/Y: Die 100 Entscheidungsbäume | Z-Achse: Vorhergesagte Klasse (Höhe)")
-
-        # 1. Daten für 3D-Plot vorbereiten
-        # Wir wandeln das 10x10 Grid in Listen für x, y, z und farben um
-        x_vals = []
-        y_vals = []
-        z_vals = []
-        c_vals = []
-        
-        # Grid neu berechnen (falls nicht oben schon gemacht)
-        grid = np.array(votes).reshape(10, 10)
-
-        for r in range(10):
-            for c in range(10):
-                vote_val = grid[r][c]
-                x_vals.append(r)
-                y_vals.append(c)
-                z_vals.append(vote_val) # Die Höhe entspricht der Klasse (0,1,2,3)
-                c_vals.append(COLOR_MAP[vote_val])
-
-        # 2. Frames für die Rotation erstellen
-        frames = []
-        # Wir erstellen 36 Frames für eine volle Drehung (360 Grad / 10er Schritte)
-        for t in range(0, 360, 5):
-            rad = np.radians(t)
-            # Kamera kreist in einer Distanz von 1.8 um das Zentrum
-            x_eye = 1.8 * np.cos(rad)
-            y_eye = 1.8 * np.sin(rad)
+    with tab2:
+            st.markdown("**Blick in das 'Gehirn' des Random Forest (3D):**")
+            st.caption("X/Y: Die 100 Entscheidungsbäume | Z-Achse: Vorhergesagte Klasse (Höhe)")
+    
+            # 1. Daten für 3D-Plot vorbereiten
+            # Wir wandeln das 10x10 Grid in Listen für x, y, z und farben um
+            x_vals = []
+            y_vals = []
+            z_vals = []
+            c_vals = []
             
-            frames.append(go.Frame(
-                layout=dict(scene=dict(camera=dict(eye=dict(x=x_eye, y=y_eye, z=0.8))))
-            ))
-
-        # 3. Den Plot erstellen
-        fig_3d = go.Figure(
-            data=[go.Scatter3d(
-                x=x_vals, y=y_vals, z=z_vals,
-                mode='markers',
-                marker=dict(
-                    size=12,         # Größe der "Pixel"
-                    color=c_vals,    # Unsere definierten Farben
-                    symbol='square', # Quadratisch wirkt technischer/digitaler
-                    opacity=0.9,
-                    line=dict(width=1, color='DarkSlateGrey') # Feiner Rand für Mosaik-Look
-                ),
-                hovertemplate="<b>Baum [%{x},%{y}]</b><br>Vote: %{z}<extra></extra>"
-            )],
-            
-            layout=go.Layout(
-                height=400,
-                margin=dict(l=0, r=0, b=0, t=0),
-                scene=dict(
-                    xaxis=dict(visible=False), # Achsen ausblenden für cleanen Look
-                    yaxis=dict(visible=False),
-                    zaxis=dict(title="Preisklasse", range=[-0.5, 3.5], tickvals=[0,1,2,3]),
-                    aspectmode='manual',
-                    aspectratio=dict(x=1, y=1, z=0.8)
-                ),
-                # Der "Play"-Button für die Rotation
-                updatemenus=[dict(
-                    type='buttons',
-                    showactive=False,
-                    y=0.1, x=0.1, xanchor='right', yanchor='top',
-                    pad=dict(t=0, r=10),
-                    buttons=[dict(
-                        label="🔄 Rotieren",
-                        method="animate",
-                        args=[None, dict(frame=dict(duration=50, redraw=True), fromcurrent=True, transition=dict(duration=0))]
+            # Grid neu berechnen (falls nicht oben schon gemacht)
+            grid = np.array(votes).reshape(10, 10)
+    
+            for r in range(10):
+                for c in range(10):
+                    vote_val = grid[r][c]
+                    x_vals.append(r)
+                    y_vals.append(c)
+                    z_vals.append(vote_val) # Die Höhe entspricht der Klasse (0,1,2,3)
+                    c_vals.append(COLOR_MAP[vote_val])
+    
+            # 2. Frames für die Rotation erstellen
+            frames = []
+            # Wir erstellen 36 Frames für eine volle Drehung (360 Grad / 10er Schritte)
+            for t in range(0, 360, 5):
+                rad = np.radians(t)
+                # Kamera kreist in einer Distanz von 1.8 um das Zentrum
+                x_eye = 1.8 * np.cos(rad)
+                y_eye = 1.8 * np.sin(rad)
+                
+                frames.append(go.Frame(
+                    layout=dict(scene=dict(camera=dict(eye=dict(x=x_eye, y=y_eye, z=0.8))))
+                ))
+    
+            # 3. Den Plot erstellen
+            fig_3d = go.Figure(
+                data=[go.Scatter3d(
+                    x=x_vals, y=y_vals, z=z_vals,
+                    mode='markers',
+                    marker=dict(
+                        size=12,         # Größe der "Pixel"
+                        color=c_vals,    # Unsere definierten Farben
+                        symbol='square', # Quadratisch wirkt technischer/digitaler
+                        opacity=0.9,
+                        line=dict(width=1, color='DarkSlateGrey') # Feiner Rand für Mosaik-Look
+                    ),
+                    hovertemplate="<b>Baum [%{x},%{y}]</b><br>Vote: %{z}<extra></extra>"
+                )],
+                
+                layout=go.Layout(
+                    height=400,
+                    margin=dict(l=0, r=0, b=0, t=0),
+                    scene=dict(
+                        xaxis=dict(visible=False), # Achsen ausblenden für cleanen Look
+                        yaxis=dict(visible=False),
+                        zaxis=dict(title="Preisklasse", range=[-0.5, 3.5], tickvals=[0,1,2,3]),
+                        aspectmode='manual',
+                        aspectratio=dict(x=1, y=1, z=0.8)
+                    ),
+                    # Der "Play"-Button für die Rotation
+                    updatemenus=[dict(
+                        type='buttons',
+                        showactive=False,
+                        y=0.1, x=0.1, xanchor='right', yanchor='top',
+                        pad=dict(t=0, r=10),
+                        buttons=[dict(
+                            label="🔄 Rotieren",
+                            method="animate",
+                            args=[None, dict(frame=dict(duration=50, redraw=True), fromcurrent=True, transition=dict(duration=0))]
+                        )]
                     )]
-                )]
-            ),
-            frames=frames
-        )
-
-        st.plotly_chart(fig_3d, use_container_width=True)
-        st.info("Klicke auf '🔄 Rotieren', um das Modell von allen Seiten zu betrachten.")
+                ),
+                frames=frames
+            )
+    
+            st.plotly_chart(fig_3d, use_container_width=True)
+            st.info("Klicke auf '🔄 Rotieren', um das Modell von allen Seiten zu betrachten.")
 
     with tab3:
         probs_df = pd.DataFrame({

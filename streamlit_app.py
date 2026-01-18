@@ -174,7 +174,7 @@ with right_col:
             margin=dict(l=50, r=50, t=30, b=30)
         )
         st.plotly_chart(fig_radar, use_container_width=True)
-        st.caption("Das Diagramm zeigt die Balance der Hardware-Komponenten. Je größer die Fläche, desto besser die Ausstattung.")
+        st.caption("Das Diagramm zeigt die Balance der Hardware-Komponenten. Je grösser die Fläche, desto besser die Ausstattung.")
 
     with tab2:
         st.markdown("**Blick in das 'Gehirn' des Random Forest:**")

@@ -83,6 +83,7 @@ def get_individual_votes(model, input_df):
 # UI LAYOUT
 # ---------------------------------------------------------
 st.title("📱 Smartphone Price Predictor")
+st.markdown("Semesterarbeit DSBE") # Wiederhergestellt
 
 if model is None:
     st.error("⚠️ 'train.csv' fehlt! Bitte CSV hochladen.")
@@ -91,8 +92,8 @@ if model is None:
 # --- INPUTS (SIDEBAR) ---
 with st.sidebar:
     st.header("⚙️ Konfiguration")
+    st.caption("Ändere die Werte hier, um das Ergebnis live zu sehen.")
     
-    # Inputs direkt in der Sidebar
     ram = st.slider("Arbeitsspeicher (RAM)", 256, 4000, 2000, format="%d MB")
     battery = st.slider("Batteriekapazität", 500, 4000, 3000, format="%d mAh")
     px_w = st.slider("Auflösung Breite", 500, 2000, 1080, format="%d px")
@@ -121,7 +122,7 @@ pred_class = np.argmax(probs)
 votes = get_individual_votes(model, df_pred)
 
 # --- VISUALISIERUNG (HAUPTBEREICH) ---
-st.markdown("### Analyse-Ergebnis")
+st.markdown("### 📊 Analyse-Ergebnis")
 
 res_color = COLOR_MAP[pred_class]
 st.markdown(f"""
@@ -142,7 +143,7 @@ with tab1:
     val_mem = (int_mem - ranges['int_memory'][0]) / (ranges['int_memory'][1] - ranges['int_memory'][0])
     
     r_values = [val_ram, val_bat, val_mem, val_cam, val_disp, val_ram]
-    theta_labels = ['RAM', 'Akku', 'Speicher', 'Kamera', 'Display', 'RAM']
+    theta_labels = ['<b>Leistung</b><br>(RAM)', '<b>Energie</b><br>(Akku)', '<b>Speicher</b><br>(GB)', '<b>Kamera</b><br>(MP)', '<b>Display</b><br>(Pixel)', '<b>Leistung</b><br>(RAM)']
     
     fig_radar = go.Figure(data=go.Scatterpolar(
         r=r_values,
@@ -162,16 +163,21 @@ with tab1:
         margin=dict(l=40, r=40, t=40, b=40)
     )
     st.plotly_chart(fig_radar, use_container_width=True)
+    # Wiederhergestellter Text
+    st.caption("Das Diagramm zeigt die Balance der Hardware-Komponenten. Je grösser die Fläche, desto besser die Ausstattung.")
 
 with tab2:
-    st.markdown("**Entscheidungsbäume Visualisierung**")
+    # Wiederhergestellte Texte und Überschriften
+    st.markdown("### Das Gehirn des Modells: 2D vs. 3D")
+    st.caption("Vergleich der 100 Entscheidungsbäume. Links die flache Draufsicht, rechts die Topografie der Entscheidung.")
+    
     grid = np.array(votes).reshape(10, 10)
     
     # Grid Layout für Plots
     col_2d, col_3d = st.columns(2)
     
     with col_2d:
-        st.markdown("2D Mosaik")
+        st.markdown("#### 🟦 2D Mosaik")
         fig_2d = go.Figure(data=go.Heatmap(
             z=grid, colorscale=HEATMAP_COLORS, zmin=0, zmax=3, showscale=False, xgap=2, ygap=2
         ))
@@ -184,7 +190,7 @@ with tab2:
         st.plotly_chart(fig_2d, use_container_width=True)
 
     with col_3d:
-        st.markdown("3D Landschaft")
+        st.markdown("#### 🏔️ 3D Landschaft")
         # Frames für Animation berechnen
         frames = []
         for t in range(0, 360, 10): 
